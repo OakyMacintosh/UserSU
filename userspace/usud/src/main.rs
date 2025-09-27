@@ -58,3 +58,23 @@ fn get_system_info() -> Result<(), Box<dyn std::error::Error>> {
     
     Ok(())
 }
+
+fn rootCheck() {
+    // Quick check if currently running as root
+    if is_root() {
+        println!("Root access is already available!");
+    }
+
+    // Comprehensive check
+    let access = SuperUserAccess::check();
+    if access.has_any_access() {
+        println!("Some form of root access is available");
+    }
+
+    // Check if you need to request elevation
+    if !access.has_current_root() && access.can_escalate {
+        println!("Need to use sudo for root operations");
+    }
+}
+
+struct SystemPartition {}
