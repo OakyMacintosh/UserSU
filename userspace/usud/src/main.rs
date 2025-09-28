@@ -77,4 +77,12 @@ fn rootCheck() {
     }
 }
 
-struct SystemPartition {}
+fn main() {
+    println!("Operating System: {}", get_os_type());
+    
+    if let Err(e) = get_system_info() {
+        eprintln!("Error retrieving system info: {}", e);
+    }
+    
+    rootCheck();
+}

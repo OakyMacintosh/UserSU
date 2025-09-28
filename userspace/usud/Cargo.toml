@@ -1,5 +1,55 @@
-[dependencies]
-libc = "0.2"
+[package]
+name = "usersu"
+version = "0.1.0"
+edition = "2021"
 
-# Optional: For more idiomatic Rust
+[dependencies]
+clap = "4.5.48"
+cmake = "0.1.54"
+libc = "0.2"
 nix = { version = "0.27", features = ["user"] }
+
+[workspace.metadata.android]
+package-name = "dev.usersu.manager"
+build-dir = "kotlin"
+gradle-command = "gradlew.bat"
+
+# Custom script to build the Android app
+[package.metadata.android]
+android-sdk = { min = 24, target = 34 }
+gradle-version = "8.3"
+kotlin-version = "1.9.10"
+
+[[bin]]
+name = "build-android"
+path = "src/build_android.rs"
+[[bin]]
+name = "su"
+path = "src/su.rs"
+
+[[bin]]
+name = "usersu"
+path = "src/main.rs"
+
+[[bin]]
+name = "troot"
+path = "src/TempPRoot.rs"
+
+[package.metadata.scripts]
+build-android = """
+powershell -Command "
+if (-not (Test-Path 'kotlin/gradle/wrapper/gradle-wrapper.jar')) {
+    Write-Host 'Downloading Gradle wrapper...'
+    New-Item -ItemType Directory -Force -Path 'kotlin/gradle/wrapper' | Out-Null
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar' -OutFile 'kotlin/gradle/wrapper/gradle-wrapper.jar'
+}
+Set-Location kotlin
+./gradlew.bat assembleDebug
+if ($LASTEXITCODE -eq 0) {
+    Write-Host 'Build successful! APK location: build/outputs/apk/debug/UserSU-debug.apk'
+} else {
+    Write-Host 'Build failed!'
+    exit 1
+}
+"""
+
