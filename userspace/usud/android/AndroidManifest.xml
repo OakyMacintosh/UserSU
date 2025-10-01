@@ -2,10 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="me.usersu"
     android:versionCode="1"
-    android:versionName="0.1.0">
+    android:versionName="0.1.0a">
 
     <!-- Minimum and target SDKs -->
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
+    <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="34" />
 
     <application
         android:allowBackup="false"
