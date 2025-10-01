@@ -59,6 +59,12 @@ fn get_system_info() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn printHelp() -> bool {
+    println!("UserSU help\n");
+    println!("usage: usud [command] <args>\n");
+    println!("STILL IN DEV BRO\n");
+}
+
 fn rootCheck() {
     // Quick check if currently running as root
     if is_root() {
@@ -78,11 +84,5 @@ fn rootCheck() {
 }
 
 fn main() {
-    println!("Operating System: {}", get_os_type());
     
-    if let Err(e) = get_system_info() {
-        eprintln!("Error retrieving system info: {}", e);
-    }
-    
-    rootCheck();
 }
