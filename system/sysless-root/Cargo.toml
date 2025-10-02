@@ -1,0 +1,17 @@
+[package]
+name = "sysless-root"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = "4.5.48"
+nix = "0.30.1"
+
+
+[[bin]]
+name = "su"
+path = "src/Su.rs"
+
+[[bin]]
+name = "usud"
+path = "src/main.rs"
