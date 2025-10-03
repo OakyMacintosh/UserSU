@@ -2,7 +2,7 @@
   description = "UserSU nix flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable"; # [span_0](start_span)Already set to unstable[span_0](end_span)
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -10,34 +10,42 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        pkgsCross = pkgs.pkgsCross;
+
+        # Use the NDK from androidenv (more portable across nixpkgs versions)
+        ndk = pkgs.androidenv.ndkPackages_21d.ndk;
+
+        targets = [
+          { name = "aarch64"; triple = "aarch64-linux-android"; api = "21"; }
+          { name = "armv7";   triple = "armv7a-linux-androideabi"; api = "21"; }
+          { name = "i686";    triple = "i686-linux-android"; api = "21"; }
+          { name = "x86_64";  triple = "x86_64-linux-android"; api = "21"; }
+        ];
+
+        mkCompilerWrapper = target: let
+          prefix = "${ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin";
+          clang = "${prefix}/${target.triple}${target.api}-clang";
+          clangpp = "${prefix}/${target.triple}${target.api}-clang++";
+        in [
+          (pkgs.writeShellScriptBin "android-${target.name}-gcc" ''
+            exec ${clang} "$@"
+          '')
+          (pkgs.writeShellScriptBin "android-${target.name}-g++" ''
+            exec ${clangpp} "$@"
+          '')
+        ];
+
+        compilerWrappers = pkgs.lib.concatMap mkCompilerWrapper targets;
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = [
             pkgs.gcc
-            pkgs.kmod
-    
-            # pkgs.linuxHeaders
-            pkgs.glibc
             pkgs.rustup
-
-            # === NEW ADDITIONS FOR PYTHON/UV ===
-            pkgs.python314 # Python 3.14
-            pkgs.uv         # uv package manager
-            # =================================
-
-            # [span_1](start_span)Cross-compilers[span_1](end_span)
-            pkgsCross.aarch64-multiplatform.buildPackages.gcc
-            pkgsCross.armv7l-hf-multiplatform.buildPackages.gcc
-          ];
-
-          shellHook = ''
-            [span_2](start_span)clear[span_2](end_span)
-            [span_3](start_span)rustup default stable[span_3](end_span)
-
-            # Optional: Add a setup message for the new tools
-            echo "Python 3.14 and uv are available."
-          '';
-      };
-  });
+            pkgs.just
+            pkgs.python314
+            pkgs.uv
+            pkgs.android-tools
+            ndk
+          ] ++ compilerWrappers;
+        };
+      });
 }
