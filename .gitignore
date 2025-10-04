@@ -323,3 +323,40 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Gradle
+.gradle/
+/build/
+*.jar
+*.war
+*.ear
+*.zip
+*.tar
+*.tar.gz
+hs_err_pid*
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Misc
+target/
+
+su
+libfakeroot.so

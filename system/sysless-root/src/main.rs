@@ -1,11 +1,18 @@
 use clap::Parser;
-use nix::unistd::execvpe;
 use std::env;
-use std::ffi::{CString, OsStr};
+use std::ffi::{CString, CStr};
 use std::path::PathBuf;
 use std::process::exit;
 
-/// usersu — userland "superuser" launcher (safe, illusion only)
+#[cfg(not(target_os = "android"))]
+use nix::unistd::execvpe;
+
+#[cfg(target_os = "android")]
+fn execvpe(_cmd: &CStr, _args: &[&CStr], _env: &[&CStr]) -> nix::Result<std::convert::Infallible> {
+    unimplemented!("Android build: use execve instead");
+}
+
+/// usersu – userland "superuser" launcher (safe, illusion only)
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Launch a program under libfakeroot; does NOT grant real root.")]
 struct Opt {
@@ -67,41 +74,32 @@ fn main() {
         .map(|s| CString::new(s.as_str()).expect("NUL in arg"))
         .collect();
 
-    // Build env: start from current env, but override/add our variables
-    let mut new_env: Vec<(CString, CString)> = env::vars()
-        .map(|(k,v)| {
-            (CString::new(k).unwrap(), CString::new(v).unwrap())
-        })
+    // Build env: start from current env, filtering out vars we'll override
+    let mut new_env: Vec<(String, String)> = env::vars()
+        .filter(|(k, _)| k != "LD_PRELOAD" && k != "FAKE_ROOT" && k != "FAKE_ROOT_UID")
         .collect();
 
     // Set LD_PRELOAD to our lib
     let lib_val = lib_real.to_string_lossy().into_owned();
-    new_env.push((CString::new("LD_PRELOAD").unwrap(), CString::new(lib_val).unwrap()));
+    new_env.push(("LD_PRELOAD".to_string(), lib_val));
 
     // Set FAKE_ROOT to the requested rootfs
     let root_val = opts.rootfs.to_string_lossy().into_owned();
-    new_env.push((CString::new("FAKE_ROOT").unwrap(), CString::new(root_val).unwrap()));
+    new_env.push(("FAKE_ROOT".to_string(), root_val));
 
     // Optionally set FAKE_ROOT_UID
     if opts.fake_uid {
-        new_env.push((CString::new("FAKE_ROOT_UID").unwrap(), CString::new("1").unwrap()));
-    } else {
-        // Ensure it's not set in the child unless present in our env
-        // (we'll not explicitly remove other env variables here)
+        new_env.push(("FAKE_ROOT_UID".to_string(), "1".to_string()));
     }
 
-    // Convert to arrays for execvpe
+    // Convert to CStrings for execvpe
     let c_cmd = CString::new(cmd_path.as_str()).expect("NUL in command");
     let c_args: Vec<&CStr> = cmd_args.iter().map(|s| s.as_c_str()).collect();
 
     // envp: vector of "KEY=VALUE" CStrings
     let envp_cstrings: Vec<CString> = new_env.into_iter()
-        .map(|(k,v)| {
-            // build "K=V"
-            let mut s = k.into_string().unwrap();
-            s.push('=');
-            s.push_str(&v.into_string().unwrap());
-            CString::new(s).unwrap()
+        .map(|(k, v)| {
+            CString::new(format!("{}={}", k, v)).unwrap()
         })
         .collect();
     let envp: Vec<&CStr> = envp_cstrings.iter().map(|s| s.as_c_str()).collect();
