@@ -1,26 +1,34 @@
 {
   description = "UserSU nix flake";
-
+  
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
-
+  
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-
+        
         # Use the NDK from androidenv (more portable across nixpkgs versions)
-        ndk = pkgs.androidenv.ndkPackages_21d.ndk;
-
+        androidComposition = pkgs.androidenv.composeAndroidPackages {
+          ndkVersions = ["21.4.7075529"];
+          includeNDK = true;
+          platformVersions = ["28" "29" "30"];
+        };
+        ndk = androidComposition.ndk-bundle;
+        
+        # Detect the host platform for NDK toolchain paths
+        ndkHost = if pkgs.stdenv.isDarwin then "darwin-x86_64" else "linux-x86_64";
+        
         targets = [
           { name = "aarch64"; triple = "aarch64-linux-android"; api = "21"; }
           { name = "armv7";   triple = "armv7a-linux-androideabi"; api = "21"; }
           { name = "i686";    triple = "i686-linux-android"; api = "21"; }
           { name = "x86_64";  triple = "x86_64-linux-android"; api = "21"; }
         ];
-
+        
         mkCompilerWrapper = target: let
           prefix = "${ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin";
           clang = "${prefix}/${target.triple}${target.api}-clang";
@@ -33,15 +41,16 @@
             exec ${clangpp} "$@"
           '')
         ];
-
+        
         compilerWrappers = pkgs.lib.concatMap mkCompilerWrapper targets;
-      in {
+      in
+      {
         devShells.default = pkgs.mkShell {
           buildInputs = [
             pkgs.gcc
             pkgs.rustup
             pkgs.just
-            pkgs.python314
+            pkgs.python3
             pkgs.uv
             pkgs.android-tools
             ndk
