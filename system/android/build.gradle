@@ -1,0 +1,62 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.7.3'
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    namespace "me.usersu"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "me.usersu"
+        minSdk 15
+        targetSdk 34
+        versionCode 1
+        versionName "0.1.0a"
+        
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    lintOptions {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+    
+    // Configure where native libraries are located
+    sourceSets {
+        main {
+            manifest.srcFile 'main/AndroidManifest.xml'
+            java.srcDirs = ['main/java']
+            res.srcDirs = ['main/res']
+            assets.srcDirs = ['main/assets']
+            jniLibs.srcDirs = ['main/jniLibs']
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.apache.commons:commons-compress:1.21'
+}
