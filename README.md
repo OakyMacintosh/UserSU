@@ -24,3 +24,6 @@ UserSU runs in userspace, so, the there's no kernel state changes. It uses a fak
 > UserSU is on constant development.
 
 **UserSU** uses the same root-emulation context as [OpenRoot](https://github.com/oakymacintosh/openroot) used.
+
+Join the telegram group to acompain development:
+[Click here!](https://t.me/usersu_root)
