@@ -1,5 +1,5 @@
 {
-  description = "UserSU flake (GNU/Linux cross compilers + Android NDK)";
+  description = "UserSU flake";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
@@ -42,6 +42,8 @@
             gradle
             openjdk17
             android-sdk
+	    flutter
+	    jdk17
           ] ++ crossCompilers;
 
           shellHook = ''
