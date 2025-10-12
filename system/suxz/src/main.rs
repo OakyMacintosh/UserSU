@@ -3,9 +3,10 @@ use std::path::PathBuf;
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer, Verifier};
 use rand::rngs::OsRng;
 use std::fs;
-use std::io::{self, Read, Write, BufRead, BufReader};
+use std::io::{self, Write, BufRead, BufReader};
 use xz2::write::XzEncoder;
 use owo_colors::OwoColorize;
+use tar::Builder;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -24,9 +25,9 @@ enum Commands {
     },
     /// Creates a .su.xz file and its signature
     Create {
-        /// Input file to compress and sign
+        /// Input files to compress and sign
         #[arg(short, long, value_name = "FILE")]
-        input: PathBuf,
+        input: Vec<PathBuf>,
         /// Output directory for the .su.xz and .su.xz.sig files
         #[arg(short, long, value_name = "DIR")]
         output: Option<PathBuf>,
@@ -77,27 +78,44 @@ fn generate_keys(output_dir: Option<PathBuf>) -> io::Result<()> {
 }
 
 fn create_su_xz(
-    input_path: &PathBuf,
+    input_paths: &[PathBuf],
     output_dir: Option<PathBuf>,
     private_key_path: &PathBuf,
 ) -> io::Result<()> {
-    // Read input file
-    let mut input_file = fs::File::open(input_path)?;
-    let mut input_data = Vec::new();
-    input_file.read_to_end(&mut input_data)?;
+    if input_paths.is_empty() {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "No input files provided"));
+    }
 
-    // Compress data
+    // Create a tar archive in memory
+    let mut tar_builder = Builder::new(Vec::new());
+    for path in input_paths {
+        if path.is_file() {
+            tar_builder.append_path_with_name(path, path.file_name().unwrap())?;
+        } else if path.is_dir() {
+            tar_builder.append_dir_all(path.file_name().unwrap(), path)?;
+        } else {
+            return Err(io::Error::new(io::ErrorKind::NotFound, format!("Input path does not exist or is not a file/directory: {}", path.display())));
+        }
+    }
+    let tar_data = tar_builder.into_inner()?;
+
+    // Compress tar data with xz
     let mut encoder = XzEncoder::new(Vec::new(), 9);
-    encoder.write_all(&input_data)?;
+    encoder.write_all(&tar_data)?;
     let compressed_data = encoder.finish()?;
 
     // Determine output paths
     let output_path = output_dir.unwrap_or_else(|| PathBuf::from("."));
     fs::create_dir_all(&output_path)?;
 
-    let file_name = input_path.file_name().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid input file name"))?;
-    let su_xz_path = output_path.join(format!("{}.su.xz", file_name.to_string_lossy()));
-    let signature_path = output_path.join(format!("{}.su.xz.sig", file_name.to_string_lossy()));
+    let base_name = if input_paths.len() == 1 {
+        input_paths[0].file_name().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid input file name"))?.to_string_lossy().to_string()
+    } else {
+        "archive".to_string()
+    };
+
+    let su_xz_path = output_path.join(format!("{}.su.xz", base_name));
+    let signature_path = output_path.join(format!("{}.su.xz.sig", base_name));
 
     // Write .su.xz file
     let mut su_xz_file = fs::File::create(&su_xz_path)?;
@@ -172,7 +190,7 @@ fn interactive_session() -> io::Result<()> {
         } else if trimmed_line == "help" {
             println!("{}", "Available commands:".yellow());
             println!("  keygen [-o <DIR>]");
-            println!("  create -i <FILE> -p <PRIVATE_KEY_FILE> [-o <DIR>]");
+            println!("  create -i <FILE1> [<FILE2>...] -p <PRIVATE_KEY_FILE> [-o <DIR>]");
             println!("  verify -i <FILE> -s <SIGNATURE_FILE> -p <PUBLIC_KEY_FILE>");
             println!("  exit");
             println!("  help");
