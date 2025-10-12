@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- TODO: Remove this file once you have defined a backup plan. -->
+    </cloud-backup>
+</data-extraction-rules>
