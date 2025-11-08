@@ -2,12 +2,16 @@
 name = "minsuki"
 version = "0.1.0"
 edition = "2021"
-authors = ["Your Name"]
+authors = ["Milo/OakyMac"]
 description = "Minimal SuperUser emulation layer"
 
 [[bin]]
 name = "minsuki"
 path = "src/main.rs"
+
+[[bin]]
+name = "envspoof"
+path = "src/tools/spoofer.rs"
 
 [lib]
 name = "libminsuki"
