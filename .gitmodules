@@ -1,3 +1,0 @@
-[submodule "sandbox/proot"]
-	path = sandbox/proot
-	url = https://github.com/termux/proot
