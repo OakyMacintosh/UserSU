@@ -13,6 +13,9 @@ jobs:
   build-android:
     name: Build for Android (${{ matrix.target }})
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spoofed-su
     strategy:
       matrix:
         include:
@@ -45,19 +48,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('spoofed-su/**/Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('spoofed-su/**/Cargo.lock') }}
 
       - name: Cache target directory
         uses: actions/cache@v4
         with:
-          path: target
-          key: ${{ runner.os }}-target-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          path: spoofed-su/target
+          key: ${{ runner.os }}-target-${{ matrix.target }}-${{ hashFiles('spoofed-su/**/Cargo.lock') }}
 
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
