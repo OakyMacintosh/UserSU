@@ -21,7 +21,7 @@ It's written in Rust because I wanted something fast and memory-safe, plus Rust 
 - Spoofs all the environment variables apps check for root
 - Interactive root shell with `psu` command
 - Execute commands as "root" with `psudo`
-- Works on any Android device (tested on my Pixel and Samsung)
+- Works on any Android device (tested on my motorola harpia and moto g54)
 - Pretty terminal colors because why not
 
 ## How does it work?
